@@ -17,7 +17,7 @@ train.replace({'Sex': sexMap}, inplace=True)
 test.replace({'Sex': sexMap}, inplace=True)
 
 # Embarked feature
-embarkedMap = {'S': 1, 'C': 2, 'Q': 2}
+embarkedMap = {'S': 0, 'C': 1, 'Q': 2}
 train.replace({'Embarked': embarkedMap}, inplace=True)
 train['Embarked'].fillna(0, inplace=True)
 test.replace({'Embarked': embarkedMap}, inplace=True)
@@ -51,7 +51,6 @@ test['Ticket'].fillna((testMax-testMin)/2.0+testMin,inplace=True)
 cabinMap = {'n': 1, 'A': 2, 'B': 3, 'C': 4, 'D': 5, 'E': 6, 'F': 7, 'G': 8, 'T': 9 }
 train['Cabin'] = [str(c)[0] for c in train['Cabin']]
 train.replace({'Cabin': cabinMap}, inplace=True)
-
 test['Cabin']  = [str(c)[0] for c in test['Cabin']]
 test.replace({'Cabin': cabinMap}, inplace=True)
 
@@ -88,102 +87,91 @@ xTest['PassengerId']  = test['PassengerId']
 
 # Try PCA in the pipeline
 # from sklearn.decomposition import PCA
-# pca = PCA(n_components=4,whiten=True)
+# pca = PCA(n_components=5,whiten=True)
 # xTrain = pd.DataFrame(pca.fit_transform(xTrain.drop('PassengerId',axis=1)))
 # xTrain['PassengerId'] = train['PassengerId']
 
 # Deploy a classifier
-from sklearn.grid_search import GridSearchCV
+# from sklearn.grid_search import GridSearchCV
 
 # from sklearn.neighbors import KNeighborsClassifier
-# c = KNeighborsClassifier() # Accuracy = 0.80 
-# clf = GridSearchCV(c, {
-#    'n_neighbors': range(1,40),
-#    'weights': ['uniform','distance']
-# })
+# clf = KNeighborsClassifier(n_neighbors=10) # Accuracy = 0.81 
  
 # from sklearn.tree import DecisionTreeClassifier
-# c = DecisionTreeClassifier() # Accuracy = 0.84 
-# clf = GridSearchCV(c, {
-#     'min_samples_split': range(1,20), 
-#     'max_features': range(1,len(xTrain.columns.values)-1),
-#     'random_state': [1,10,12,23,42]
-# })
+# clf = DecisionTreeClassifier() # Accuracy = 0.78
  
-from sklearn.ensemble import RandomForestClassifier
-c = RandomForestClassifier() # Accuracy = 0.83
-clf = GridSearchCV(c, {
-   'min_samples_split': range(1,20), 
-    'n_estimators': range(5,15),
-    'random_state': [42]
-})
-
-# from sklearn.ensemble import AdaBoostClassifier 
-# c = AdaBoostClassifier() # Accuracy = 0.79 
-# clf = GridSearchCV(c, {
-#    'random_state': [1,10,12,23,42],
-#    'learning_rate': [0.2,0.4,0.6,0.8,1.0]
-# })
-
-# Vanilla Linear SVC
-# from sklearn.svm import LinearSVC
-# c = LinearSVC() # Accuracy = 0.79 
-# clf = GridSearchCV(c, {
-#    'random_state': [1,10,12,23,42]
-# })
-
-# from sklearn.linear_model import LogisticRegression
-# c = LogisticRegression() # Accuracy = 0.799
-# clf = GridSearchCV(c, {
-#    'random_state': [1,10,12,23,42]
-# })
-
-# from sklearn.svm import SVC
-# c = SVC() # Accuracy = 0.793
-# clf = GridSearchCV(c, {
-#    'C': [0.5,1.0,5.0,10.0,20.0],
-#    'kernel': ['linear','poly','rbf'],
-#    'random_state': [1,10,12,23,42]
-# })
-
-'''
-# 5-fold cross-validation score
-from sklearn.cross_validation import cross_val_score
-print "Cross val score: ", cross_val_score(
-    clf, 
-    xTrain.drop('PassengerId',axis=1),
-    yTrain, 
-    cv=5
-)
+# from sklearn.ensemble import RandomForestClassifier
+# clf = RandomForestClassifier(n_estimators=1000,criterion='entropy') # 0.79
 
 # Split into artificial train and test sets
-from sklearn.cross_validation import train_test_split
-featuresTrain, featuresTest, labelsTrain, labelsTest = train_test_split(
-    xTrain.drop('PassengerId',axis=1), 
-    yTrain, 
-    train_size=0.80, 
-    random_state=42
-)
-'''
+# from sklearn.cross_validation import train_test_split
+# featuresTrain, featuresTest, labelsTrain, labelsTest = train_test_split(
+#     xTrain.drop('PassengerId',axis=1), 
+#     yTrain, 
+#     train_size=0.20 
+# )
 
 # Fit and predict
+# clf.fit(xTrain.drop('PassengerId',axis=1),yTrain)
+# print zip(xTrain.columns.values, clf.feature_importances_)
+# exit(0)
+
 # clf.fit(featuresTrain,labelsTrain)
+
+xTrain['Survived'] = train['Survived']
+# print xTrain.corr() - Tells us that females is the first split, more likely to survive
+# xTrain = xTrain[xTrain['Sex'] == 1].drop('Sex',axis=1)
+# Class 0 more likely to have survived than not for Females
+# print len(xTrain[(xTrain['Pclass'] == 0) & (xTrain['Survived'] == 0)])
+# Class 0.5 mostly survived as well for females
+# print len(xTrain[(xTrain['Pclass'] == 0.5) & (xTrain['Survived'] == 0)])
+# Class 1 is a completely even split for females: just as likely to survive or perish
+# print len(xTrain[(xTrain['Pclass'] == 1) & (xTrain['Survived'] == 0)])
+# xTrain = xTrain[xTrain['Pclass'] == 1].drop('Pclass',axis=1)
+# If Embarked = 0, more likely to perish than survive
+# print len(xTrain[(xTrain['Embarked'] == 0) & (xTrain['Survived'] == 0)])
+# If Embarked = 0.5, more likely to survive than perish
+# print len(xTrain[(xTrain['Embarked'] == 0.5) & (xTrain['Survived'] == 1)])
+# If Embarked = 1, more likely to survive than perish
+# print len(xTrain[(xTrain['Embarked'] == 1) & (xTrain['Survived'] == 1)])
+
+# Suggests that cabin = 1 for Men correlated with lower survival rate
+# xTrain = xTrain[xTrain['Sex'] == 0].drop('Sex',axis=1)
+# print xTrain.corr()
+
+def predictManual(record):
+    if record.Sex == 0:
+        return 0            
+    else: # Females
+        if record.Pclass == 0:
+            return 1
+        elif record.Pclass == 0.5:
+            return 1
+        else:
+            if record.Embarked == 0:
+                return 0
+            elif record.Embarked == 0.5:
+                return 1
+            else:
+                return 1
+
+# Put together a list of predictions 
+pred = [predictManual(r) for r in xTest.itertuples()]
+
 # pred = clf.predict(featuresTest)
 
+
 # SUBMISSIONS
-clf.fit(xTrain.drop('PassengerId',axis=1),yTrain)
-pred = clf.predict(xTest.drop('PassengerId',axis=1))
+# clf.fit(xTrain.drop('PassengerId',axis=1),yTrain)
+# pred = clf.predict(xTest.drop('PassengerId',axis=1))
+
 # Create and write the submission to disk
 submission = pd.DataFrame({'Survived': pred}, index=xTest['PassengerId'])
 submission.to_csv("submission.csv")
 
+'''
 # Scoring for training before submission:
 
-# Print feature importances for DecisionTreeClassifier
-# print "Feature importances: ", zip(featuresTrain.columns.values,
-#        clf.feature_importances_)
-
-'''
 # Scoring via accuracy
 from sklearn.metrics import accuracy_score
 print "Accuracy: ", accuracy_score(labelsTest,pred)
